@@ -31,9 +31,9 @@ namespace SnakeClient.Models
                 var response = await _restClient.ExecuteGetTaskAsync<GameStateDto>(request);
 
                 if (!response.IsSuccessful)
-                    return new SnakeAPIResponse<GameStateDto> { ErrorMessage = "Запрос неудачен", Data = null };
+                    return new SnakeAPIResponse<GameStateDto> { ErrorMessage = $"Запрос неудачен.", Data = null };
 
-                return new SnakeAPIResponse<GameStateDto> {ErrorMessage = null, Data = response.Data };
+                return new SnakeAPIResponse<GameStateDto> {ErrorMessage = null, Data = response.Data, IsSuccess = true };
             }
             catch(Exception ex)
             {
@@ -56,7 +56,7 @@ namespace SnakeClient.Models
                 if (!response.IsSuccessful)
                     return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = "Запрос неудачен", Data = null };
 
-                return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = null, Data = response.Data };
+                return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = null, Data = response.Data, , IsSuccess = true };
             }
             catch (Exception ex)
             {
@@ -81,11 +81,11 @@ namespace SnakeClient.Models
                 if (!response.IsSuccessful)
                     return new SnakeAPIResponse<object> { ErrorMessage = "Запрос неудачен", Data = null };
 
-                return new SnakeAPIResponse<object> { ErrorMessage = null, Data = null };
+                return new SnakeAPIResponse<object> { ErrorMessage = null, Data = null, IsSuccess = true };
             }
             catch (Exception ex)
             {
-                return new SnakeAPIResponse<object> { ErrorMessage = ex.ToString(), Data = null };
+                return new SnakeAPIResponse<object> { ErrorMessage = ex.ToString(), Data = null};
             }
         }
     }

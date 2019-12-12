@@ -1,0 +1,51 @@
+﻿<Window x:Class="SnakeClient.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SnakeClient"
+        mc:Ignorable="d"
+        xmlns:viewModel="clr-namespace:SnakeClient.ViewModels"
+        Title="MainWindow" Height="500" Width="800">
+    <Window.DataContext>
+        <viewModel:MainWindowViewModel />
+    </Window.DataContext>
+    <Window.Resources>
+        <DataTemplate x:Key="SnakeRectangle">
+            <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Green" />
+        </DataTemplate>
+        <DataTemplate x:Key="FoodRectangle">
+            <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Red" />
+        </DataTemplate>
+        <Style x:Key="RectangleStyle">
+            <Setter Property="Canvas.Left" Value="{Binding Path=X}" />
+            <Setter Property="Canvas.Top" Value="{Binding Path=Y}" />
+        </Style>
+    </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Up" CommandParameter="Top"/>
+        <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Left" CommandParameter="Left"/>
+        <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Right" CommandParameter="Right"/>
+        <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Down" CommandParameter="Bottom"/>
+    </Window.InputBindings>
+    <StackPanel Orientation="Horizontal">
+        <Canvas Height="{Binding Path=GameBoardSize.Height}" Width="{Binding Path=GameBoardSize.Width}" Background="LightGreen" Margin="50">
+            <ItemsControl ItemsSource="{Binding Path=Snake}" ItemTemplate="{DynamicResource SnakeRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}" >
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding Path=Food}" ItemTemplate="{StaticResource FoodRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </Canvas>
+        <TextBlock Text="{Binding Path=GameException}" />
+    </StackPanel>
+</Window>

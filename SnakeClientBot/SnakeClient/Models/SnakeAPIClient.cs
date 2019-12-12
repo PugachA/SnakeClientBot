@@ -56,7 +56,7 @@ namespace SnakeClient.Models
                 if (!response.IsSuccessful)
                     return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = "Запрос неудачен", Data = null };
 
-                return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = null, Data = response.Data, , IsSuccess = true };
+                return new SnakeAPIResponse<NameResponseDto> { ErrorMessage = null, Data = response.Data, IsSuccess = true };
             }
             catch (Exception ex)
             {

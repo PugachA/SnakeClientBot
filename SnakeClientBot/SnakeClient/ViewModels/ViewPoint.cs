@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SnakeClient.DTO;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -15,9 +16,20 @@ namespace SnakeClient.ViewModels
             Margin = margin;
         }
 
+        public ViewPoint(PointDto point, int rectangleSize, int margin)
+        {
+            this.RectangleSize = rectangleSize;
+            this.Margin = margin;
+
+            this.X = ParseCoordinate(point.X);
+            this.Y = ParseCoordinate(point.Y);
+        }
+
         public int X { get; set; }
         public int Y { get; set; }
-        public int RectangleSize { get; set; }
-        public int Margin { get; set; }
+        public int RectangleSize { get; private set; }
+        public int Margin { get; private set; }
+
+        private int ParseCoordinate(int coordinate) => coordinate * (RectangleSize + Margin);
     }
 }

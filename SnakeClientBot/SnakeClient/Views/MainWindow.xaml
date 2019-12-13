@@ -29,7 +29,7 @@
         <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Down" CommandParameter="Bottom"/>
     </Window.InputBindings>
     <StackPanel Orientation="Horizontal">
-        <Canvas Height="{Binding Path=GameBoardSize.Height}" Width="{Binding Path=GameBoardSize.Width}" Background="LightGreen" Margin="50">
+        <Canvas Height="{Binding Path=GameBoardSize.Height}" Width="{Binding Path=GameBoardSize.Width}" Background="LightGreen" Margin="10">
             <ItemsControl ItemsSource="{Binding Path=Snake}" ItemTemplate="{DynamicResource SnakeRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}" >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>

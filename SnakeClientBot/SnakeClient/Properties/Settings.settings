@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="Uri" Type="(Web Service URL)" Scope="Application">
-      <Value Profile="(Default)">https://localhost:5001/</Value>
+      <Value Profile="(Default)">http://167.172.186.24</Value>
     </Setting>
     <Setting Name="RectangleSize" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">19</Value>
+      <Value Profile="(Default)">12</Value>
     </Setting>
     <Setting Name="Margin" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">1</Value>

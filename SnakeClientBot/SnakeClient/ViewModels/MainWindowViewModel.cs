@@ -82,29 +82,6 @@ namespace SnakeClient.ViewModels
         {
             try
             {
-                //this.GameBoardSize.Height = ParseCoordinate(50);
-                //this.GameBoardSize.Width = ParseCoordinate(50);
-
-                //Snake.Add(new ViewPoint(new PointDto { X = 10, Y = 15 }, rectangleSize, margin));
-                //Snake.Add(new ViewPoint(new PointDto { X = 11, Y = 15 }, rectangleSize, margin));
-
-                //Food.Add(new ViewPoint(new PointDto { X = 15, Y = 20 }, rectangleSize, margin));
-                //Food.Add(new ViewPoint(new PointDto { X = 18, Y = 23 }, rectangleSize, margin));
-
-                //PlayerStateDto playerStateDto = new PlayerStateDto { IsSpawnProtected = true, Name = "Test", Snake = new List<PointDto> { new PointDto { X = 10, Y = 10 }, new PointDto { X = 10, Y = 11 } } };
-                //PlayerStateView playerStateView = new PlayerStateView(playerStateDto, rectangleSize, margin);
-                //Players.Add(playerStateView);
-
-                //PlayerStateDto playerStateDto1 = new PlayerStateDto { IsSpawnProtected = true, Name = "Test", Snake = new List<PointDto> { new PointDto { X = 30, Y = 10 }, new PointDto { X = 31, Y = 10 } } };
-                //PlayerStateView playerStateView1= new PlayerStateView(playerStateDto1, rectangleSize, margin);
-                //Players.Add(playerStateView1);
-
-                //RectangleDto rectangle = new RectangleDto { Height = 3, Width = 3, X = 0, Y = 0 };
-                //RectangleDto rectangle1 = new RectangleDto { Height = 5, Width = 3, X = 25, Y = 5 };
-
-                //Walls.Add(rectangle.TransformForView(rectangleSize, margin));
-                //Walls.Add(rectangle1.TransformForView(rectangleSize, margin));
-
                 var responseName = await _snakeApiClient.GetNameResponse();
                 if (!responseName.IsSuccess)
                     throw new InvalidOperationException($"Запрос был неуспешен. {responseName.ErrorMessage}");
@@ -120,7 +97,7 @@ namespace SnakeClient.ViewModels
                 this.GameBoardSize.Height = ParseCoordinate(gameBoardDto.GameBoardSize.Height);
                 this.GameBoardSize.Width = ParseCoordinate(gameBoardDto.GameBoardSize.Width);
 
-                await Task.Run(() => Task.Delay(gameBoardDto.TimeUntilNextTurnMilliseconds));
+                await Task.Delay(gameBoardDto.TimeUntilNextTurnMilliseconds).ConfigureAwait(true);
                 _timer = new DispatcherTimer(DispatcherPriority.Send);
                 _timer.Tick += DoWork;
                 _timer.Interval = TimeSpan.FromMilliseconds(gameBoardDto.TurnTimeMilliseconds / 2);
@@ -207,7 +184,7 @@ namespace SnakeClient.ViewModels
             foreach (PlayerStateDto player in gameBoardDto.Players)
             {
                 if (player == null || player.Name == myName)
-                    continue; 
+                    continue;
 
                 PlayerStateView playerState = new PlayerStateView(player, rectangleSize, margin);
                 Players.Add(playerState);
@@ -216,14 +193,14 @@ namespace SnakeClient.ViewModels
             Walls.Clear();
             foreach (RectangleDto wall in gameBoardDto.Walls)
             {
-               Walls.Add(wall.TransformForView(rectangleSize, margin));
+                Walls.Add(wall.TransformForView(rectangleSize, margin));
             }
 
             GameInfo = GenerateGameInfo(gameBoardDto);
             GameException = String.Empty;
         }
 
-        private int ParseCoordinate(int coordinate) => coordinate * (rectangleSize+ margin);
+        private int ParseCoordinate(int coordinate) => coordinate * (rectangleSize + margin);
 
         private string GenerateGameInfo(GameStateDto gameBoardDto)
         {
@@ -236,8 +213,10 @@ namespace SnakeClient.ViewModels
             stringBuilder.AppendLine($"{nameof(gameBoardDto.TimeUntilNextTurnMilliseconds)}: {gameBoardDto.TimeUntilNextTurnMilliseconds}");
             stringBuilder.AppendLine($"{nameof(gameBoardDto.MaxFood)}: {gameBoardDto.MaxFood}");
 
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.Players)}:");
             var players = gameBoardDto.Players.Where(p => p.Snake != null).Select(p => $"{p.Name}: {p.Snake.Count()}");
-            stringBuilder.AppendLine($"{nameof(gameBoardDto.Players)}: {JsonSerializer.Serialize(players)}");
+            foreach (var item in players)
+                stringBuilder.AppendLine(item);
 
             return stringBuilder.ToString();
         }

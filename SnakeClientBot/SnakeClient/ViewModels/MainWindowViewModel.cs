@@ -24,6 +24,7 @@ namespace SnakeClient.ViewModels
         private readonly SnakeAPIClient _snakeApiClient;
         private string gameException;
         private string gameInfo;
+        private string myName;
 
         public string GameException
         {
@@ -104,6 +105,10 @@ namespace SnakeClient.ViewModels
                 //Walls.Add(rectangle.TransformForView(rectangleSize, margin));
                 //Walls.Add(rectangle1.TransformForView(rectangleSize, margin));
 
+                var responseName = await _snakeApiClient.GetNameResponse();
+                if (!responseName.IsSuccess)
+                    throw new InvalidOperationException($"Запрос был неуспешен. {responseName.ErrorMessage}");
+                myName = responseName.Data.Name;
 
                 _ = await _snakeApiClient.PostDirection(Direction.Up);
                 var response = await _snakeApiClient.GetGameState();
@@ -201,15 +206,24 @@ namespace SnakeClient.ViewModels
             Players.Clear();
             foreach (PlayerStateDto player in gameBoardDto.Players)
             {
+                if (player == null || player.Name == myName)
+                    continue; 
+
                 PlayerStateView playerState = new PlayerStateView(player, rectangleSize, margin);
                 Players.Add(playerState);
+            }
+
+            Walls.Clear();
+            foreach (RectangleDto wall in gameBoardDto.Walls)
+            {
+               Walls.Add(wall.TransformForView(rectangleSize, margin));
             }
 
             GameInfo = GenerateGameInfo(gameBoardDto);
             GameException = String.Empty;
         }
 
-        private int ParseCoordinate(int coordinate) => coordinate * (rectangleSize + margin);
+        private int ParseCoordinate(int coordinate) => coordinate * (rectangleSize+ margin);
 
         private string GenerateGameInfo(GameStateDto gameBoardDto)
         {

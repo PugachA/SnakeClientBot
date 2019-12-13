@@ -25,22 +25,9 @@ namespace SnakeClient.Views
     /// </summary>
     public partial class MainWindow : Window
     {
-        SnakeAPIClient snakeAPIClient;
         public MainWindow()
         {
             InitializeComponent();
-            snakeAPIClient = new SnakeAPIClient(new Uri(@"http://167.172.186.24"), "");
         }
-
-        private async void Button_Click(object sender, RoutedEventArgs e)
-        {
-            var nameResponse = await snakeAPIClient.GetNameResponse();
-            NameResponseDto nameResponseDto = nameResponse.Data;
-            var gameStateResponse= await snakeAPIClient.GetGameState();
-            GameStateDto gameStateDto = gameStateResponse.Data;
-            var response = await snakeAPIClient.PostDirection(Direction.Up);
-            //PointDto[] points = gameStateDto.Food;
-        }
-
     }
 }

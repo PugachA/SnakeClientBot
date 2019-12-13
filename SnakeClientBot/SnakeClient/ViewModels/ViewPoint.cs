@@ -8,6 +8,7 @@ namespace SnakeClient.ViewModels
 {
     public class ViewPoint
     {
+
         public ViewPoint(int x, int y, int rectangleSize, int margin)
         {
             X = x;
@@ -29,7 +30,7 @@ namespace SnakeClient.ViewModels
         public int Y { get; set; }
         public int RectangleSize { get; private set; }
         public int Margin { get; private set; }
-
+        public string Description { get; set; }
         private int ParseCoordinate(int coordinate) => coordinate * (RectangleSize + Margin);
     }
 }

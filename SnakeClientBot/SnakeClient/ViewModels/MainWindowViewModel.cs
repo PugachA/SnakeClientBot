@@ -4,7 +4,11 @@ using Prism.Mvvm;
 using SnakeClient.DTO;
 using SnakeClient.Models;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Size = SnakeClient.Models.Size;
@@ -19,6 +23,7 @@ namespace SnakeClient.ViewModels
         private DispatcherTimer _timer;
         private readonly SnakeAPIClient _snakeApiClient;
         private string gameException;
+        private string gameInfo;
 
         public string GameException
         {
@@ -29,9 +34,20 @@ namespace SnakeClient.ViewModels
                 RaisePropertyChanged(nameof(GameException));
             }
         }
+        public string GameInfo
+        {
+            get { return gameInfo; }
+            set
+            {
+                gameInfo = value;
+                RaisePropertyChanged(nameof(GameInfo));
+            }
+        }
         public Size GameBoardSize { get; private set; }
         public ObservableCollection<ViewPoint> Snake { get; private set; }
         public ObservableCollection<ViewPoint> Food { get; private set; }
+        public ObservableCollection<PlayerStateView> Players { get; private set; }
+        public ObservableCollection<RectangleDto> Walls { get; private set; }
         public DelegateCommand<string> PostDirectionCommand { get; private set; }
 
         public MainWindowViewModel()
@@ -45,6 +61,8 @@ namespace SnakeClient.ViewModels
                 margin = Properties.Settings.Default.Margin;
                 Snake = new ObservableCollection<ViewPoint>();
                 Food = new ObservableCollection<ViewPoint>();
+                Players = new ObservableCollection<PlayerStateView>();
+                Walls = new ObservableCollection<RectangleDto>();
                 GameBoardSize = new Size();
 
                 _snakeApiClient = new SnakeAPIClient(new Uri(Properties.Settings.Default.Uri), "9jzuz6FEa64j7TADCtzF");
@@ -63,6 +81,30 @@ namespace SnakeClient.ViewModels
         {
             try
             {
+                //this.GameBoardSize.Height = ParseCoordinate(50);
+                //this.GameBoardSize.Width = ParseCoordinate(50);
+
+                //Snake.Add(new ViewPoint(new PointDto { X = 10, Y = 15 }, rectangleSize, margin));
+                //Snake.Add(new ViewPoint(new PointDto { X = 11, Y = 15 }, rectangleSize, margin));
+
+                //Food.Add(new ViewPoint(new PointDto { X = 15, Y = 20 }, rectangleSize, margin));
+                //Food.Add(new ViewPoint(new PointDto { X = 18, Y = 23 }, rectangleSize, margin));
+
+                //PlayerStateDto playerStateDto = new PlayerStateDto { IsSpawnProtected = true, Name = "Test", Snake = new List<PointDto> { new PointDto { X = 10, Y = 10 }, new PointDto { X = 10, Y = 11 } } };
+                //PlayerStateView playerStateView = new PlayerStateView(playerStateDto, rectangleSize, margin);
+                //Players.Add(playerStateView);
+
+                //PlayerStateDto playerStateDto1 = new PlayerStateDto { IsSpawnProtected = true, Name = "Test", Snake = new List<PointDto> { new PointDto { X = 30, Y = 10 }, new PointDto { X = 31, Y = 10 } } };
+                //PlayerStateView playerStateView1= new PlayerStateView(playerStateDto1, rectangleSize, margin);
+                //Players.Add(playerStateView1);
+
+                //RectangleDto rectangle = new RectangleDto { Height = 3, Width = 3, X = 0, Y = 0 };
+                //RectangleDto rectangle1 = new RectangleDto { Height = 5, Width = 3, X = 25, Y = 5 };
+
+                //Walls.Add(rectangle.TransformForView(rectangleSize, margin));
+                //Walls.Add(rectangle1.TransformForView(rectangleSize, margin));
+
+
                 _ = await _snakeApiClient.PostDirection(Direction.Up);
                 var response = await _snakeApiClient.GetGameState();
                 if (!response.IsSuccess)
@@ -73,9 +115,10 @@ namespace SnakeClient.ViewModels
                 this.GameBoardSize.Height = ParseCoordinate(gameBoardDto.GameBoardSize.Height);
                 this.GameBoardSize.Width = ParseCoordinate(gameBoardDto.GameBoardSize.Width);
 
+                await Task.Run(() => Task.Delay(gameBoardDto.TimeUntilNextTurnMilliseconds));
                 _timer = new DispatcherTimer(DispatcherPriority.Send);
                 _timer.Tick += DoWork;
-                _timer.Interval = TimeSpan.FromMilliseconds(gameBoardDto.TimeUntilNextTurnMilliseconds / 10);
+                _timer.Interval = TimeSpan.FromMilliseconds(gameBoardDto.TurnTimeMilliseconds / 2);
                 _timer.Start();
                 this.logger.Info("Игра инициализирована");
             }
@@ -122,6 +165,7 @@ namespace SnakeClient.ViewModels
                 if (!response.IsSuccess)
                     throw new InvalidOperationException($"Запрос не успешен. {response.ErrorMessage}");
 
+
                 ProcessResponse(response.Data);
             }
             catch (Exception ex)
@@ -133,29 +177,55 @@ namespace SnakeClient.ViewModels
 
         private void ProcessResponse(GameStateDto gameBoardDto)
         {
+
             Snake.Clear();
+            int count = 0;
             foreach (PointDto point in gameBoardDto.Snake)
             {
-                ViewPoint processPoint = new ViewPoint(ParseCoordinate(point.X),
-                    ParseCoordinate(point.Y),
-                    rectangleSize,
-                    margin);
+                ViewPoint processPoint = new ViewPoint(point, rectangleSize, margin);
+
+                if (count == 0)
+                    processPoint.Description = gameBoardDto.Snake.Count().ToString();
+
                 Snake.Add(processPoint);
+                count++;
             }
 
             Food.Clear();
             foreach (PointDto point in gameBoardDto.Food)
             {
-                ViewPoint processPoint = new ViewPoint(ParseCoordinate(point.X),
-                    ParseCoordinate(point.Y),
-                    rectangleSize,
-                    margin);
+                ViewPoint processPoint = new ViewPoint(point, rectangleSize, margin);
                 Food.Add(processPoint);
             }
 
+            Players.Clear();
+            foreach (PlayerStateDto player in gameBoardDto.Players)
+            {
+                PlayerStateView playerState = new PlayerStateView(player, rectangleSize, margin);
+                Players.Add(playerState);
+            }
+
+            GameInfo = GenerateGameInfo(gameBoardDto);
             GameException = String.Empty;
         }
 
         private int ParseCoordinate(int coordinate) => coordinate * (rectangleSize + margin);
+
+        private string GenerateGameInfo(GameStateDto gameBoardDto)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.IsStarted)}: {gameBoardDto.IsStarted}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.IsPaused)}: {gameBoardDto.IsPaused}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.RoundNumber)}: {gameBoardDto.RoundNumber}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.TurnNumber)}: {gameBoardDto.TurnNumber}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.TurnTimeMilliseconds)}: {gameBoardDto.TurnTimeMilliseconds}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.TimeUntilNextTurnMilliseconds)}: {gameBoardDto.TimeUntilNextTurnMilliseconds}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.MaxFood)}: {gameBoardDto.MaxFood}");
+
+            var players = gameBoardDto.Players.Where(p => p.Snake != null).Select(p => $"{p.Name}: {p.Snake.Count()}");
+            stringBuilder.AppendLine($"{nameof(gameBoardDto.Players)}: {JsonSerializer.Serialize(players)}");
+
+            return stringBuilder.ToString();
+        }
     }
 }

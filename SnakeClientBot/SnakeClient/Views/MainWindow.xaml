@@ -6,16 +6,28 @@
         xmlns:local="clr-namespace:SnakeClient"
         mc:Ignorable="d"
         xmlns:viewModel="clr-namespace:SnakeClient.ViewModels"
-        Title="MainWindow" Height="500" Width="800">
+        Title="MainWindow" Height="Auto" Width="Auto">
     <Window.DataContext>
         <viewModel:MainWindowViewModel />
     </Window.DataContext>
     <Window.Resources>
+        <DataTemplate x:Key="MySnakeRectangle">
+            <Grid>
+                <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Green" />
+                <TextBlock Text="{Binding Path=Description}" HorizontalAlignment="Center" Foreground="White"/>
+            </Grid>
+        </DataTemplate>
         <DataTemplate x:Key="SnakeRectangle">
-            <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Green" />
+            <Grid>
+                <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Blue" />
+                <TextBlock Text="{Binding Path=Description}" HorizontalAlignment="Center" Foreground="White"/>
+            </Grid>
         </DataTemplate>
         <DataTemplate x:Key="FoodRectangle">
             <Rectangle Width="{Binding Path=RectangleSize}" Height="{Binding Path=RectangleSize}" Margin="{Binding Path=Margin}" Fill="Red" />
+        </DataTemplate>
+        <DataTemplate x:Key="WallRectangle">
+            <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="Gray" />
         </DataTemplate>
         <Style x:Key="RectangleStyle">
             <Setter Property="Canvas.Left" Value="{Binding Path=X}" />
@@ -30,7 +42,7 @@
     </Window.InputBindings>
     <StackPanel Orientation="Horizontal">
         <Canvas Height="{Binding Path=GameBoardSize.Height}" Width="{Binding Path=GameBoardSize.Width}" Background="LightGreen" Margin="10">
-            <ItemsControl ItemsSource="{Binding Path=Snake}" ItemTemplate="{DynamicResource SnakeRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}" >
+            <ItemsControl ItemsSource="{Binding Path=Snake}" ItemTemplate="{DynamicResource MySnakeRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}" >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <Canvas />
@@ -45,8 +57,32 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding Path=Players}" >
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding Path=Snake}" ItemTemplate="{StaticResource SnakeRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding Path=Walls}" ItemTemplate="{StaticResource WallRectangle}" ItemContainerStyle="{StaticResource RectangleStyle}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
         </Canvas>
-        <TextBlock Text="{Binding Path=GameException}" />
-        <Button Content="Test" Click="Button_Click" />
+        <StackPanel Orientation="Vertical">
+            <TextBlock Text="{Binding Path=GameException}" Foreground="Red" />
+            <TextBlock Text="{Binding Path=GameInfo}" TextWrapping="Wrap"/>
+        </StackPanel>
     </StackPanel>
 </Window>

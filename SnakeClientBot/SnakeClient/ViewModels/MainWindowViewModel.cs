@@ -161,10 +161,20 @@ namespace SnakeClient.ViewModels
                 if (!gameStateDto.Food.Contains(nearestFood))
                     nearestFood = NearestFood(startPoint, gameStateDto.Food);
 
-                var points = graph.Search(startPoint, nearestFood);
+                var points = graph.WideSearch(startPoint, nearestFood);
 
-                var directions = points.Select(p => p.Direction);
-                lastDirection = directions.Last();
+                if (points != null)
+                {
+                    var directions = points.Select(p => p.Direction);
+                    lastDirection = directions.Last();
+
+                }
+                else
+                {
+                    nearestFood = NearestFood(startPoint, gameStateDto.Food.Where(p => p != nearestFood));
+                    logger.Info($"Не найден маршрут до точки. Меняем точку на {nearestFood}");
+                }
+
 
                 await _snakeApiClient.PostDirection(lastDirection);
 

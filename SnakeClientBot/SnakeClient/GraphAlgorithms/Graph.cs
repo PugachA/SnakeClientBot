@@ -92,7 +92,7 @@ namespace SnakeClient.Models
             return !obstacles.Contains(PointDto);
         }
 
-        public IEnumerable<PointDto> Search(PointDto start, PointDto goal)
+        public IEnumerable<PointDto> WideSearch(PointDto start, PointDto goal)
         {
 
             Queue<PointDto> frontier = new Queue<PointDto>();
@@ -124,8 +124,15 @@ namespace SnakeClient.Models
 
             while (current1 != start)
             {
-                path.Add(cameFrom.Select(d => d.Key).Single(d => d == current1));
-                current1 = cameFrom[current1];
+                if (cameFrom.TryGetValue(current1, out PointDto newCurrent))
+                {
+                    path.Add(cameFrom.Select(d => d.Key).Single(d => d == current1));
+                    current1 = newCurrent;
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             return path;

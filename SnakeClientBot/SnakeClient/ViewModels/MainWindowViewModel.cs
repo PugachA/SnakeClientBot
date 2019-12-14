@@ -25,6 +25,8 @@ namespace SnakeClient.ViewModels
         private string gameException;
         private string gameInfo;
         private string myName;
+        private Direction lastDirection;
+        private PointDto nearestFood;
 
         public string GameException
         {
@@ -65,6 +67,8 @@ namespace SnakeClient.ViewModels
                 Players = new ObservableCollection<PlayerStateView>();
                 Walls = new ObservableCollection<RectangleDto>();
                 GameBoardSize = new Size();
+
+                lastDirection = Direction.Up;
 
                 _snakeApiClient = new SnakeAPIClient(new Uri(Properties.Settings.Default.Uri), "9jzuz6FEa64j7TADCtzF");
 
@@ -147,14 +151,44 @@ namespace SnakeClient.ViewModels
                 if (!response.IsSuccess)
                     throw new InvalidOperationException($"Запрос не успешен. {response.ErrorMessage}");
 
+                //нужно обнулять lastdirection
+                GameStateDto gameStateDto = response.Data;
+                Graph graph = new Graph(gameStateDto);
 
-                ProcessResponse(response.Data);
+                PointDto startPoint = gameStateDto.Snake.First();
+                startPoint.Direction = lastDirection;
+
+                if (!gameStateDto.Food.Contains(nearestFood))
+                    nearestFood = NearestFood(startPoint, gameStateDto.Food);
+
+                var points = graph.Search(startPoint, nearestFood);
+
+                var directions = points.Select(p => p.Direction);
+                lastDirection = directions.Last();
+
+                await _snakeApiClient.PostDirection(lastDirection);
+
+                ProcessResponse(gameStateDto);
             }
             catch (Exception ex)
             {
                 GameException = "Не удалось обработать запрос";
                 this.logger.Error(ex, $"Не удалось обработать запрос");
             }
+        }
+
+        private PointDto NearestFood(PointDto startPoint, IEnumerable<PointDto> points)
+        {
+            Dictionary<PointDto, double> pointDistanses = new Dictionary<PointDto, double>();
+            foreach (PointDto point in points)
+                pointDistanses.Add(point, Distanse(startPoint, point));
+
+            return pointDistanses.OrderBy(p => p.Value).First().Key;
+        }
+
+        private double Distanse(PointDto firstPoint, PointDto secondPoint)
+        {
+            return Math.Sqrt(Math.Pow(secondPoint.X - firstPoint.X, 2) + Math.Pow(secondPoint.Y - firstPoint.Y, 2));
         }
 
         private void ProcessResponse(GameStateDto gameBoardDto)

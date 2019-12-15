@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SnakeClient"
         mc:Ignorable="d"
         xmlns:viewModel="clr-namespace:SnakeClient.ViewModels" 
-        Title="MainWindow" Height="Auto" Width="Auto">
+        Title="MainWindow" Height="Auto" Width="Auto" KeyDown="Window_KeyDown">
     <Window.DataContext>
         <viewModel:MainWindowViewModel />
     </Window.DataContext>
@@ -39,6 +39,7 @@
         <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Left" CommandParameter="Left"/>
         <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Right" CommandParameter="Right"/>
         <KeyBinding Command="{Binding Path=PostDirectionCommand}" Key="Down" CommandParameter="Bottom"/>
+        <KeyBinding Command="{Binding Path=ToggleModeCommand}" Key="Space" />
     </Window.InputBindings>
     <StackPanel Orientation="Horizontal">
         <Canvas Height="{Binding Path=GameBoardSize.Height}" Width="{Binding Path=GameBoardSize.Width}" Background="LightGreen" Margin="10">
@@ -83,7 +84,7 @@
         <StackPanel Orientation="Vertical">
             <TextBlock Text="{Binding Path=GameException}" Foreground="Red" />
             <TextBlock Text="{Binding Path=GameInfo}" TextWrapping="Wrap"/>
-            <CheckBox Content="Ручной режим" IsChecked="{Binding IsManualMode}"/>
+            <CheckBox Content="Ручной режим" IsChecked="{Binding IsManualMode}" x:Name="checkBox" />
         </StackPanel>
     </StackPanel>
 </Window>

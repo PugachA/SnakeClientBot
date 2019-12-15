@@ -29,5 +29,11 @@ namespace SnakeClient.Views
         {
             InitializeComponent();
         }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+                checkBox.IsChecked = !checkBox.IsChecked;
+        }
     }
 }

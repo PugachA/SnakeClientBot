@@ -1,10 +1,11 @@
 ﻿using SnakeClient.DTO;
+using SnakeClient.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SnakeClient.Models
+namespace SnakeClient.GraphAlgorithms
 {
     public class Graph
     {
@@ -55,7 +56,7 @@ namespace SnakeClient.Models
             return PointDtos;
         }
 
-        public PointDto[] Neighbors(PointDto id)
+        private PointDto[] Neighbors(PointDto id)
         {
             switch (id.Direction)
             {
@@ -90,6 +91,11 @@ namespace SnakeClient.Models
         private bool OutOfWalls(PointDto PointDto)
         {
             return !obstacles.Contains(PointDto);
+        }
+
+        private double Cost(PointDto firstPoint, PointDto secondPoint)
+        {
+            return 1;
         }
 
         public IEnumerable<PointDto> WideSearch(PointDto start, PointDto goal)
@@ -136,6 +142,64 @@ namespace SnakeClient.Models
             }
 
             return path;
+        }
+
+        public IEnumerable<PointDto> AStarSearch(PointDto start, PointDto goal)
+        {
+            Dictionary<PointDto, PointDto> cameFrom = new Dictionary<PointDto, PointDto>();
+            Dictionary<PointDto, double> costSoFar = new Dictionary<PointDto, double>();
+
+            var frontier = new PriorityQueue<PointDto>();
+            frontier.Enqueue(start, 0);
+
+            cameFrom[start] = start;
+            costSoFar[start] = 0;
+
+            while (frontier.Count > 0)
+            {
+                var current = frontier.Dequeue();
+
+                if (current.Equals(goal))
+                {
+                    break;
+                }
+
+                foreach (var next in this.Neighbors(current))
+                {
+                    double newCost = costSoFar[current] + this.Cost(current, next);
+                    if (!costSoFar.ContainsKey(next)
+                        || newCost < costSoFar[next])
+                    {
+                        costSoFar[next] = newCost;
+                        double priority = newCost + Heuristic(next, goal);
+                        frontier.Enqueue(next, priority);
+                        cameFrom[next] = current;
+                    }
+                }
+            }
+
+            PointDto current1 = goal;
+            HashSet<PointDto> path = new HashSet<PointDto>();
+
+            while (current1 != start)
+            {
+                if (cameFrom.TryGetValue(current1, out PointDto newCurrent))
+                {
+                    path.Add(cameFrom.Select(d => d.Key).Single(d => d == current1));
+                    current1 = newCurrent;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            return path;
+        }
+
+        private double Heuristic(PointDto firstPoint, PointDto secondPoint)
+        {
+            return Math.Abs(firstPoint.X - secondPoint.X) + Math.Abs(firstPoint.Y - secondPoint.Y);
         }
     }
 }

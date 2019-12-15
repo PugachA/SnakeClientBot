@@ -2,6 +2,7 @@
 using Prism.Commands;
 using Prism.Mvvm;
 using SnakeClient.DTO;
+using SnakeClient.GraphAlgorithms;
 using SnakeClient.Models;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,18 @@ namespace SnakeClient.ViewModels
         private string myName;
         private Direction lastDirection;
         private PointDto nearestFood;
+        private bool isManualMode;
+
+        public bool IsManualMode
+        {
+            get { return isManualMode; }
+            set
+            {
+                nearestFood = null;
+                isManualMode = value;
+                RaisePropertyChanged(nameof(GameException));
+            }
+        }
 
         public string GameException
         {
@@ -68,6 +81,7 @@ namespace SnakeClient.ViewModels
                 Walls = new ObservableCollection<RectangleDto>();
                 GameBoardSize = new Size();
 
+                IsManualMode = false;
                 lastDirection = Direction.Up;
 
                 _snakeApiClient = new SnakeAPIClient(new Uri(Properties.Settings.Default.Uri), "9jzuz6FEa64j7TADCtzF");
@@ -105,7 +119,7 @@ namespace SnakeClient.ViewModels
                 _timer = new DispatcherTimer(DispatcherPriority.Send);
                 _timer.Tick += DoWork;
                 _timer.Interval = TimeSpan.FromMilliseconds(gameBoardDto.TurnTimeMilliseconds / 2);
-                _timer.Start();
+                //_timer.Start();
                 this.logger.Info("Игра инициализирована");
             }
             catch (Exception ex)
@@ -153,30 +167,32 @@ namespace SnakeClient.ViewModels
 
                 //нужно обнулять lastdirection
                 GameStateDto gameStateDto = response.Data;
-                Graph graph = new Graph(gameStateDto);
 
-                PointDto startPoint = gameStateDto.Snake.First();
-                startPoint.Direction = lastDirection;
-
-                if (!gameStateDto.Food.Contains(nearestFood))
-                    nearestFood = NearestFood(startPoint, gameStateDto.Food);
-
-                var points = graph.WideSearch(startPoint, nearestFood);
-
-                if (points != null)
+                if (!IsManualMode)
                 {
-                    var directions = points.Select(p => p.Direction);
-                    lastDirection = directions.Last();
+                    Graph graph = new Graph(gameStateDto);
 
+                    PointDto startPoint = gameStateDto.Snake.First();
+                    startPoint.Direction = lastDirection;
+
+                    if (!gameStateDto.Food.Contains(nearestFood))
+                        nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food);
+
+                    var points = graph.AStarSearch(startPoint, nearestFood);
+
+                    if (points != null)
+                    {
+                        var directions = points.Select(p => p.Direction);
+                        lastDirection = directions.Last();
+                    }
+                    else
+                    {
+                        nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food.Where(p => p != nearestFood));
+                        logger.Info($"Не найден маршрут до точки. Меняем точку на {nearestFood}");
+                    }
+
+                    await _snakeApiClient.PostDirection(lastDirection);
                 }
-                else
-                {
-                    nearestFood = NearestFood(startPoint, gameStateDto.Food.Where(p => p != nearestFood));
-                    logger.Info($"Не найден маршрут до точки. Меняем точку на {nearestFood}");
-                }
-
-
-                await _snakeApiClient.PostDirection(lastDirection);
 
                 ProcessResponse(gameStateDto);
             }
@@ -187,13 +203,36 @@ namespace SnakeClient.ViewModels
             }
         }
 
-        private PointDto NearestFood(PointDto startPoint, IEnumerable<PointDto> points)
+        private PointDto NearestFoodByDistanse(PointDto startPoint, IEnumerable<PointDto> points)
         {
             Dictionary<PointDto, double> pointDistanses = new Dictionary<PointDto, double>();
             foreach (PointDto point in points)
                 pointDistanses.Add(point, Distanse(startPoint, point));
 
             return pointDistanses.OrderBy(p => p.Value).First().Key;
+        }
+
+        private PointDto NearestFoodByAStar(Graph graph, PointDto startPoint, IEnumerable<PointDto> points)
+        {
+            //сделать многопоточно
+            int count = Int32.MaxValue;
+            PointDto nearestFood = null;
+            foreach (PointDto foodPoint in points)
+            {
+                var pathPoints = graph.AStarSearch(startPoint, foodPoint);
+
+                if (pathPoints != null)
+                {
+                    int pathCount = pathPoints.Count();
+                    if (pathCount < count)
+                    {
+                        nearestFood = foodPoint;
+                        count = pathCount;
+                    }
+                }
+            }
+
+            return nearestFood;
         }
 
         private double Distanse(PointDto firstPoint, PointDto secondPoint)

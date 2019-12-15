@@ -83,6 +83,7 @@
         <StackPanel Orientation="Vertical">
             <TextBlock Text="{Binding Path=GameException}" Foreground="Red" />
             <TextBlock Text="{Binding Path=GameInfo}" TextWrapping="Wrap"/>
+            <CheckBox Content="Ручной режим" IsChecked="{Binding IsManualMode}"/>
         </StackPanel>
     </StackPanel>
 </Window>

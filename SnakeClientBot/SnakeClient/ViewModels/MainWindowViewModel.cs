@@ -26,8 +26,7 @@ namespace SnakeClient.ViewModels
         private string gameException;
         private string gameInfo;
         private string myName;
-        private Direction lastDirection;
-        private PointDto nearestFood;
+        private readonly AutomaticControl automaticControl;
         private bool isManualMode;
 
         public bool IsManualMode
@@ -35,7 +34,7 @@ namespace SnakeClient.ViewModels
             get { return isManualMode; }
             set
             {
-                nearestFood = null;
+                automaticControl.UpdateNearestFood(null);
                 isManualMode = value;
                 RaisePropertyChanged(nameof(GameException));
             }
@@ -81,8 +80,8 @@ namespace SnakeClient.ViewModels
                 Walls = new ObservableCollection<RectangleDto>();
                 GameBoardSize = new Size();
 
+                automaticControl = new AutomaticControl();
                 IsManualMode = false;
-                lastDirection = Direction.Up;
 
                 _snakeApiClient = new SnakeAPIClient(new Uri(Properties.Settings.Default.Uri), "9jzuz6FEa64j7TADCtzF");
 
@@ -119,7 +118,7 @@ namespace SnakeClient.ViewModels
                 _timer = new DispatcherTimer(DispatcherPriority.Send);
                 _timer.Tick += DoWork;
                 _timer.Interval = TimeSpan.FromMilliseconds(gameBoardDto.TurnTimeMilliseconds / 2);
-                //_timer.Start();
+                _timer.Start();
                 this.logger.Info("Игра инициализирована");
             }
             catch (Exception ex)
@@ -165,36 +164,21 @@ namespace SnakeClient.ViewModels
                 if (!response.IsSuccess)
                     throw new InvalidOperationException($"Запрос не успешен. {response.ErrorMessage}");
 
-                //нужно обнулять lastdirection
+                //logger.Info($"Получен ответ {JsonSerializer.Serialize(response.Data)}");
                 GameStateDto gameStateDto = response.Data;
 
-                if (!IsManualMode)
+                if (gameStateDto.IsStarted && !gameStateDto.IsPaused)
                 {
-                    Graph graph = new Graph(gameStateDto);
 
-                    PointDto startPoint = gameStateDto.Snake.First();
-                    startPoint.Direction = lastDirection;
-
-                    if (!gameStateDto.Food.Contains(nearestFood))
-                        nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food);
-
-                    var points = graph.AStarSearch(startPoint, nearestFood);
-
-                    if (points != null)
+                    if (!IsManualMode)
                     {
-                        var directions = points.Select(p => p.Direction);
-                        lastDirection = directions.Last();
-                    }
-                    else
-                    {
-                        nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food.Where(p => p != nearestFood));
-                        logger.Info($"Не найден маршрут до точки. Меняем точку на {nearestFood}");
+                        Direction direction = automaticControl.Control(gameStateDto);
+
+                        await _snakeApiClient.PostDirection(direction);
                     }
 
-                    await _snakeApiClient.PostDirection(lastDirection);
+                    ProcessResponse(gameStateDto);
                 }
-
-                ProcessResponse(gameStateDto);
             }
             catch (Exception ex)
             {
@@ -203,57 +187,22 @@ namespace SnakeClient.ViewModels
             }
         }
 
-        private PointDto NearestFoodByDistanse(PointDto startPoint, IEnumerable<PointDto> points)
-        {
-            Dictionary<PointDto, double> pointDistanses = new Dictionary<PointDto, double>();
-            foreach (PointDto point in points)
-                pointDistanses.Add(point, Distanse(startPoint, point));
-
-            return pointDistanses.OrderBy(p => p.Value).First().Key;
-        }
-
-        private PointDto NearestFoodByAStar(Graph graph, PointDto startPoint, IEnumerable<PointDto> points)
-        {
-            //сделать многопоточно
-            int count = Int32.MaxValue;
-            PointDto nearestFood = null;
-            foreach (PointDto foodPoint in points)
-            {
-                var pathPoints = graph.AStarSearch(startPoint, foodPoint);
-
-                if (pathPoints != null)
-                {
-                    int pathCount = pathPoints.Count();
-                    if (pathCount < count)
-                    {
-                        nearestFood = foodPoint;
-                        count = pathCount;
-                    }
-                }
-            }
-
-            return nearestFood;
-        }
-
-        private double Distanse(PointDto firstPoint, PointDto secondPoint)
-        {
-            return Math.Sqrt(Math.Pow(secondPoint.X - firstPoint.X, 2) + Math.Pow(secondPoint.Y - firstPoint.Y, 2));
-        }
-
         private void ProcessResponse(GameStateDto gameBoardDto)
         {
-
-            Snake.Clear();
-            int count = 0;
-            foreach (PointDto point in gameBoardDto.Snake)
+            if (gameBoardDto.Snake != null)
             {
-                ViewPoint processPoint = new ViewPoint(point, rectangleSize, margin);
+                Snake.Clear();
+                int count = 0;
+                foreach (PointDto point in gameBoardDto.Snake)
+                {
+                    ViewPoint processPoint = new ViewPoint(point, rectangleSize, margin);
 
-                if (count == 0)
-                    processPoint.Description = gameBoardDto.Snake.Count().ToString();
+                    if (count == 0)
+                        processPoint.Description = gameBoardDto.Snake.Count().ToString();
 
-                Snake.Add(processPoint);
-                count++;
+                    Snake.Add(processPoint);
+                    count++;
+                }
             }
 
             Food.Clear();

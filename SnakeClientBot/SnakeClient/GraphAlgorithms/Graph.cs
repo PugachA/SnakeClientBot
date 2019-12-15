@@ -50,7 +50,6 @@ namespace SnakeClient.GraphAlgorithms
                         PointDto point = new PointDto(rectangle.X + i, rectangle.Y + j);
                         PointDtos.Add(point);
                     }
-
             }
 
             return PointDtos;
@@ -95,12 +94,17 @@ namespace SnakeClient.GraphAlgorithms
 
         private double Cost(PointDto firstPoint, PointDto secondPoint)
         {
+            //if (secondPoint.X == 0
+            //    || secondPoint.X == gameBoardDto.GameBoardSize.Width - 1 
+            //    || secondPoint.Y == 0
+            //    || secondPoint.Y == gameBoardDto.GameBoardSize.Height - 1)
+            //    return 3;
+
             return 1;
         }
 
         public IEnumerable<PointDto> WideSearch(PointDto start, PointDto goal)
         {
-
             Queue<PointDto> frontier = new Queue<PointDto>();
             frontier.Enqueue(start);
 
@@ -124,28 +128,14 @@ namespace SnakeClient.GraphAlgorithms
                 }
             }
 
-            //ищем путь
-            PointDto current1 = goal;
-            HashSet<PointDto> path = new HashSet<PointDto>();
-
-            while (current1 != start)
-            {
-                if (cameFrom.TryGetValue(current1, out PointDto newCurrent))
-                {
-                    path.Add(cameFrom.Select(d => d.Key).Single(d => d == current1));
-                    current1 = newCurrent;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-
-            return path;
+            return SearchPath(start, goal, cameFrom);
         }
 
         public IEnumerable<PointDto> AStarSearch(PointDto start, PointDto goal)
         {
+            if (goal == null)
+                return null;
+
             Dictionary<PointDto, PointDto> cameFrom = new Dictionary<PointDto, PointDto>();
             Dictionary<PointDto, double> costSoFar = new Dictionary<PointDto, double>();
 
@@ -160,15 +150,12 @@ namespace SnakeClient.GraphAlgorithms
                 var current = frontier.Dequeue();
 
                 if (current.Equals(goal))
-                {
                     break;
-                }
 
                 foreach (var next in this.Neighbors(current))
                 {
                     double newCost = costSoFar[current] + this.Cost(current, next);
-                    if (!costSoFar.ContainsKey(next)
-                        || newCost < costSoFar[next])
+                    if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
                     {
                         costSoFar[next] = newCost;
                         double priority = newCost + Heuristic(next, goal);
@@ -178,28 +165,31 @@ namespace SnakeClient.GraphAlgorithms
                 }
             }
 
-            PointDto current1 = goal;
-            HashSet<PointDto> path = new HashSet<PointDto>();
-
-            while (current1 != start)
-            {
-                if (cameFrom.TryGetValue(current1, out PointDto newCurrent))
-                {
-                    path.Add(cameFrom.Select(d => d.Key).Single(d => d == current1));
-                    current1 = newCurrent;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-
-            return path;
+            return SearchPath(start, goal, cameFrom);
         }
 
         private double Heuristic(PointDto firstPoint, PointDto secondPoint)
         {
             return Math.Abs(firstPoint.X - secondPoint.X) + Math.Abs(firstPoint.Y - secondPoint.Y);
+        }
+
+        private IEnumerable<PointDto> SearchPath(PointDto startPoint, PointDto goalPoint, Dictionary<PointDto, PointDto> cameFrom)
+        {
+            PointDto current = goalPoint;
+            List<PointDto> path = new List<PointDto>();
+
+            while (current != startPoint)
+            {
+                if (cameFrom.TryGetValue(current, out PointDto newCurrent))
+                {
+                    path.Add(cameFrom.Select(d => d.Key).Single(d => d == current));
+                    current = newCurrent;
+                }
+                else
+                    return null;
+            }
+
+            return path;
         }
     }
 }

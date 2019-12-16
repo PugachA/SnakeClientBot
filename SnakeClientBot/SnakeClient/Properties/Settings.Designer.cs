@@ -35,7 +35,7 @@ namespace SnakeClient.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("14")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int RectangleSize {
             get {
                 return ((int)(this["RectangleSize"]));

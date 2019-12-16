@@ -39,7 +39,7 @@ namespace SnakeClient.GraphAlgorithms
                     continue;
 
                 if (player.IsSpawnProtected || player.Snake.Count() >= gameBoardDto.Snake.Count())
-                    PointDtos.AddRange(player.Snake);
+                    PointDtos.AddRange(player.Snake.SkipLast(1));
             }
 
             foreach (RectangleDto rectangle in gameBoardDto.Walls)

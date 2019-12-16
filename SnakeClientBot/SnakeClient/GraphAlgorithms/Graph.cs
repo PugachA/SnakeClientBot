@@ -39,7 +39,7 @@ namespace SnakeClient.GraphAlgorithms
                     continue;
 
                 if (player.IsSpawnProtected || player.Snake.Count() >= gameBoardDto.Snake.Count())
-                    PointDtos.AddRange(player.Snake.SkipLast(1));
+                    PointDtos.AddRange(player.Snake);
             }
 
             foreach (RectangleDto rectangle in gameBoardDto.Walls)
@@ -103,7 +103,7 @@ namespace SnakeClient.GraphAlgorithms
             return 1;
         }
 
-        public Dictionary<PointDto, PointDto> WideSearch(PointDto start)
+        public IEnumerable<PointDto> WideSearch(PointDto start, PointDto goal)
         {
             Queue<PointDto> frontier = new Queue<PointDto>();
             frontier.Enqueue(start);
@@ -115,6 +115,9 @@ namespace SnakeClient.GraphAlgorithms
             {
                 var current = frontier.Dequeue();
 
+                if (current == goal)
+                    break;
+
                 foreach (var next in this.Neighbors(current))
                 {
                     if (!cameFrom.ContainsKey(next))
@@ -125,7 +128,7 @@ namespace SnakeClient.GraphAlgorithms
                 }
             }
 
-            return cameFrom;
+            return SearchPath(start, goal, cameFrom);
         }
 
         public IEnumerable<PointDto> AStarSearch(PointDto start, PointDto goal)
@@ -170,7 +173,7 @@ namespace SnakeClient.GraphAlgorithms
             return Math.Abs(firstPoint.X - secondPoint.X) + Math.Abs(firstPoint.Y - secondPoint.Y);
         }
 
-        public IEnumerable<PointDto> SearchPath(PointDto startPoint, PointDto goalPoint, Dictionary<PointDto, PointDto> cameFrom)
+        private IEnumerable<PointDto> SearchPath(PointDto startPoint, PointDto goalPoint, Dictionary<PointDto, PointDto> cameFrom)
         {
             PointDto current = goalPoint;
             List<PointDto> path = new List<PointDto>();

@@ -13,7 +13,6 @@ namespace SnakeClient.GraphAlgorithms
         private Direction lastDirection;
         private PointDto nearestFood;
         private readonly Logger logger = LogManager.GetLogger(nameof(AutomaticControl));
-        private int lastSnakeLength;
 
         public AutomaticControl()
         {
@@ -28,17 +27,12 @@ namespace SnakeClient.GraphAlgorithms
             if (gameStateDto.Snake == null)
                 return lastDirection;
 
-            if (lastSnakeLength > gameStateDto.Snake.Count())
-                nearestFood = null;
-
-            lastSnakeLength = gameStateDto.Snake.Count();
-
             PointDto startPoint = gameStateDto.Snake.First();
             startPoint.Direction = lastDirection;
 
             //сделать проверку на null, если не нашлась еда
             if (!gameStateDto.Food.Contains(nearestFood))
-                nearestFood = NearestFoodByHeuristic(graph, startPoint, gameStateDto.Food);
+                nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food);
 
             var points = graph.AStarSearch(startPoint, nearestFood);
 
@@ -49,23 +43,21 @@ namespace SnakeClient.GraphAlgorithms
             }
             else
             {
-                nearestFood = NearestFoodByHeuristic(graph, startPoint, gameStateDto.Food.Where(p => p != nearestFood));
+                nearestFood = NearestFoodByAStar(graph, startPoint, gameStateDto.Food.Where(p => p != nearestFood));
                 logger.Info($"Не найден маршрут до точки. Меняем точку на {nearestFood}");
             }
 
             return lastDirection;
         }
 
-        private PointDto NearestFoodByPath(Graph graph, PointDto startPoint, IEnumerable<PointDto> points)
+        private PointDto NearestFoodByAStar(Graph graph, PointDto startPoint, IEnumerable<PointDto> points)
         {
             //сделать многопоточно
             int count = Int32.MaxValue;
             PointDto nearestFood = null;
-            var cameFrom = graph.WideSearch(startPoint);
-
             foreach (PointDto foodPoint in points)
             {
-                var pathPoints = graph.SearchPath(startPoint, foodPoint, cameFrom);
+                var pathPoints = graph.AStarSearch(startPoint, foodPoint);
 
                 if (pathPoints != null)
                 {
@@ -79,49 +71,6 @@ namespace SnakeClient.GraphAlgorithms
             }
 
             return nearestFood;
-        }
-
-        private PointDto NearestFoodByHeuristic(Graph graph, PointDto startPoint, IEnumerable<PointDto> points)
-        {
-            //сделать многопоточно
-            double k1 = 1;
-            double k2 = 1.5;
-            int radius = 7;
-            double minWeight = Double.MaxValue;
-            PointDto nearestFood = null;
-            var cameFrom = graph.WideSearch(startPoint);
-
-            foreach (PointDto foodPoint in points)
-            {
-                var pathPoints = graph.SearchPath(startPoint, foodPoint, cameFrom);
-
-                if (pathPoints != null)
-                {
-                    int pathCount = pathPoints.Count();
-                    int foodCountInRadius = FoodCountInRadius(foodPoint, radius, points);
-                    double weight = k1 * pathCount - k2 * foodCountInRadius;
-
-                    if (weight < minWeight)
-                    {
-                        nearestFood = foodPoint;
-                        minWeight = weight;
-                    }
-                }
-            }
-
-            return nearestFood;
-        }
-
-        private int FoodCountInRadius(PointDto centerPoint, int radius, IEnumerable<PointDto> foodPoints)
-        {
-            int count = -1;
-
-            for (int i = centerPoint.X - radius; i <= centerPoint.X + radius; i++)
-                for (int j = centerPoint.Y - radius; j <= centerPoint.Y + radius; j++)
-                    if (foodPoints.Contains(new PointDto(i, j)))
-                        count++;
-
-            return count;
         }
 
         public void UpdateNearestFood(PointDto pointDto)

@@ -61,11 +61,10 @@ namespace SnakeClient.GraphAlgorithms
             //сделать многопоточно
             int count = Int32.MaxValue;
             PointDto nearestFood = null;
-            var cameFrom = graph.WideSearch(startPoint);
 
             foreach (PointDto foodPoint in points)
             {
-                var pathPoints = graph.SearchPath(startPoint, foodPoint, cameFrom);
+                var pathPoints = graph.AStarSearch(startPoint, foodPoint);
 
                 if (pathPoints != null)
                 {
@@ -89,11 +88,10 @@ namespace SnakeClient.GraphAlgorithms
             int radius = 7;
             double minWeight = Double.MaxValue;
             PointDto nearestFood = null;
-            var cameFrom = graph.WideSearch(startPoint);
 
             foreach (PointDto foodPoint in points)
             {
-                var pathPoints = graph.SearchPath(startPoint, foodPoint, cameFrom);
+                var pathPoints = graph.AStarSearch(startPoint, foodPoint);
 
                 if (pathPoints != null)
                 {

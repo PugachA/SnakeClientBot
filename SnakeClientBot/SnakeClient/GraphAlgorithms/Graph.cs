@@ -170,7 +170,7 @@ namespace SnakeClient.GraphAlgorithms
             return Math.Abs(firstPoint.X - secondPoint.X) + Math.Abs(firstPoint.Y - secondPoint.Y);
         }
 
-        public IEnumerable<PointDto> SearchPath(PointDto startPoint, PointDto goalPoint, Dictionary<PointDto, PointDto> cameFrom)
+        private IEnumerable<PointDto> SearchPath(PointDto startPoint, PointDto goalPoint, Dictionary<PointDto, PointDto> cameFrom)
         {
             PointDto current = goalPoint;
             List<PointDto> path = new List<PointDto>();
